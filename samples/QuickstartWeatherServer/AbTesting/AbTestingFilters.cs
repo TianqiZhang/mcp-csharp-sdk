@@ -2,10 +2,12 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Security.Claims;
+using System.Runtime.CompilerServices;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using System.Security.Cryptography;
+using Microsoft.Extensions.DependencyInjection;
 using ModelContextProtocol.Protocol;
 using ModelContextProtocol.Server;
 
@@ -116,6 +118,10 @@ public static class AbTestingFilters
 
 public sealed class ToolVariantSelector
 {
+    private static readonly ConditionalWeakTable<McpServer, BucketKeyHolder> _serverBucketKeys = new();
+    private static readonly ConditionalWeakTable<ITransport, BucketKeyHolder> _transportBucketKeys = new();
+    private static readonly ConditionalWeakTable<IServiceProvider, BucketKeyHolder> _servicesBucketKeys = new();
+
     private readonly Dictionary<string, List<ToolVariant>> _byCanonical;
     private readonly Dictionary<string, ToolVariant> _byConcrete;
 
@@ -241,12 +247,22 @@ public sealed class ToolVariantSelector
             return request.Server.SessionId!;
         }
 
-        if (!string.IsNullOrEmpty(request.JsonRpcRequest.Id.ToString()))
+        if (request.JsonRpcRequest.Context?.RelatedTransport is { } transport)
         {
-            return request.JsonRpcRequest.Id.ToString();
+            return _transportBucketKeys.GetValue(transport, _ => new BucketKeyHolder()).Key;
         }
 
-        return Guid.NewGuid().ToString("N");
+        if (request.Server.Services is { } services)
+        {
+            return _servicesBucketKeys.GetValue(services, _ => new BucketKeyHolder()).Key;
+        }
+
+        return _serverBucketKeys.GetValue(request.Server, _ => new BucketKeyHolder()).Key;
+    }
+
+    private sealed class BucketKeyHolder
+    {
+        public string Key { get; } = Guid.NewGuid().ToString("N");
     }
 }
 

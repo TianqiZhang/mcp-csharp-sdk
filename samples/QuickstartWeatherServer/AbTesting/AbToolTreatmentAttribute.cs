@@ -25,6 +25,5 @@ public sealed class AbToolTreatmentAttribute(
 
     public double Weight { get; } = weight > 0 ? weight : 1.0;
 
-    [DisallowNull]
     public string? CanonicalName { get; } = canonicalName;
 }

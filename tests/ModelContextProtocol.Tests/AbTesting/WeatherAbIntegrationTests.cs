@@ -50,22 +50,22 @@ public sealed class WeatherAbIntegrationTests : ClientServerTestBase
 
         // The list should surface a single canonical name (get_forecast) even though two variants exist.
         IList<McpClientTool> tools = await client.ListToolsAsync(cancellationToken: TestContext.Current.CancellationToken);
-        var forecast = Assert.Single(tools.Where(t => t.Name == "get_forecast"));
+        var forecast = Assert.Single(tools, t => t.Name == "get_forecast");
         Assert.NotNull(forecast.ProtocolTool.Meta);
         Assert.True(forecast.ProtocolTool.Meta!.ContainsKey("ab_experiment"));
         Assert.True(forecast.ProtocolTool.Meta!.ContainsKey("ab_treatment"));
 
         // Call the canonical name twice; the treatment should be the same for the session.
-        var first = await client.CallToolAsync("get_forecast", new Dictionary<string, JsonElement>
+        var first = await client.CallToolAsync("get_forecast", new Dictionary<string, object?>
         {
-            ["latitude"] = JsonSerializer.SerializeToElement(47.0),
-            ["longitude"] = JsonSerializer.SerializeToElement(-122.0),
+            ["latitude"] = 47.0,
+            ["longitude"] = -122.0,
         }, cancellationToken: TestContext.Current.CancellationToken);
 
-        var second = await client.CallToolAsync("get_forecast", new Dictionary<string, JsonElement>
+        var second = await client.CallToolAsync("get_forecast", new Dictionary<string, object?>
         {
-            ["latitude"] = JsonSerializer.SerializeToElement(47.0),
-            ["longitude"] = JsonSerializer.SerializeToElement(-122.0),
+            ["latitude"] = 47.0,
+            ["longitude"] = -122.0,
         }, cancellationToken: TestContext.Current.CancellationToken);
 
         string firstText = first.Content.OfType<TextContentBlock>().Single().Text!;
@@ -79,10 +79,10 @@ public sealed class WeatherAbIntegrationTests : ClientServerTestBase
     {
         await using McpClient client = await CreateMcpClientForServer();
 
-        var concise = await client.CallToolAsync("get_forecast__concise", new Dictionary<string, JsonElement>
+        var concise = await client.CallToolAsync("get_forecast__concise", new Dictionary<string, object?>
         {
-            ["latitude"] = JsonSerializer.SerializeToElement(47.0),
-            ["longitude"] = JsonSerializer.SerializeToElement(-122.0),
+            ["latitude"] = 47.0,
+            ["longitude"] = -122.0,
         }, cancellationToken: TestContext.Current.CancellationToken);
 
         string text = concise.Content.OfType<TextContentBlock>().Single().Text!;
